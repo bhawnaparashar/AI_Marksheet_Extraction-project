@@ -2,7 +2,7 @@ import google.generativeai as genai
 import os, json
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gpt-5-mini")
+model = genai.GenerativeModel("models/gemini-1.5-flash-001")
 
 async def process_text_with_llm(text):
     prompt = f"""
