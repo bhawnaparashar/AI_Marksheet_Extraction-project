@@ -1,25 +1,22 @@
-from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse
-from PIL import Image
-import io
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from utils.ocr_extractor import extract_text_from_file
+from utils.llm_processor import process_text_with_llm
 
 app = FastAPI()
 
 @app.post("/extract")
 async def extract_marksheet(file: UploadFile = File(...)):
-    try:
-        contents = await file.read()
-        image = Image.open(io.BytesIO(contents))
 
-        # TEMP DUMMY RESPONSE (for deployment)
-        return {
-            "message": "Image received successfully",
-            "filename": file.filename,
-            "image_size": image.size
-        }
+    if file.content_type not in ["image/jpeg", "image/png", "application/pdf"]:
+        raise HTTPException(status_code=400, detail="Unsupported file type")
 
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": str(e)}
-        )    
+    # STEP 1: OCR
+    extracted_text = await extract_text_from_file(file)
+
+    if not extracted_text.strip():
+        raise HTTPException(status_code=500, detail="No text extracted")
+
+    # STEP 2: Gemini
+    result = await process_text_with_llm(extracted_text)
+
+    return result
