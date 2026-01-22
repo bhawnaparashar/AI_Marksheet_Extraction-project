@@ -2,20 +2,31 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 from PIL import Image
 import io
-import pytesseract
+import easyocr
 import re
 
 app = FastAPI()
+
+# Initialize EasyOCR once
+reader = easyocr.Reader(['en'])  # English
 
 @app.post("/extract")
 async def extract_marksheet(file: UploadFile = File(...)):
     try:
         # Read uploaded file
         contents = await file.read()
-        image = Image.open(io.BytesIO(contents))
+        image = Image.open(io.BytesIO(contents)).convert('RGB')
 
-        # OCR using pytesseract
-        text = pytesseract.image_to_string(image)
+        # Convert image to bytes for EasyOCR
+        image_bytes = io.BytesIO()
+        image.save(image_bytes, format='JPEG')
+        image_bytes = image_bytes.getvalue()
+
+        # OCR with EasyOCR
+        result = reader.readtext(image_bytes)
+
+        # Combine all detected text into a single string
+        text = " ".join([item[1] for item in result])
 
         # Initialize extracted data
         extracted_data = {
@@ -24,8 +35,8 @@ async def extract_marksheet(file: UploadFile = File(...)):
             "marks": None
         }
 
-        # Extract Name
-        name_match = re.search(r"Name[:\-]?\s*(.*)", text, re.IGNORECASE)
+        # Extract Name (assumes "Name: John Doe")
+        name_match = re.search(r"Name[:\-]?\s*([A-Za-z ]+)", text, re.IGNORECASE)
         if name_match:
             extracted_data["name"] = name_match.group(1).strip()
 
@@ -51,3 +62,4 @@ async def extract_marksheet(file: UploadFile = File(...)):
             status_code=500,
             content={"error": str(e)}
         )
+)
