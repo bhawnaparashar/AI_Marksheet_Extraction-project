@@ -33,4 +33,4 @@ async def extract_marksheet(file: UploadFile = File(...)):
             status_code=500,
             detail=f"Processing failed: {str(e)}"
         )
-}
+
