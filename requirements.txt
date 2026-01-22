@@ -1,5 +1,7 @@
 fastapi
 uvicorn
-pillow
-pytesseract
 python-multipart
+easyocr
+PyPDF2
+Pillow
+google-generativeai
