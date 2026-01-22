@@ -7,16 +7,27 @@ app = FastAPI()
 @app.post("/extract")
 async def extract_marksheet(file: UploadFile = File(...)):
 
-    if file.content_type not in ["image/jpeg", "image/png", "application/pdf"]:
-        raise HTTPException(status_code=400, detail="Unsupported file type")
+    # ✅ ONLY PDF allowed (memory safe)
+    if file.content_type != "application/pdf":
+        raise HTTPException(
+            status_code=400,
+            detail="Only text-based PDF marksheets are supported"
+        )
 
-    # STEP 1: OCR
+    # STEP 1: Extract text from PDF
     extracted_text = await extract_text_from_file(file)
 
     if not extracted_text.strip():
-        raise HTTPException(status_code=500, detail="No text extracted")
+        return {
+            "error": "No readable text found",
+            "reason": "This PDF may be scanned or image-based",
+            "solution": "Please upload a text-based PDF marksheet"
+        }
 
-    # STEP 2: Gemini
+    # STEP 2: Gemini / LLM extraction
     result = await process_text_with_llm(extracted_text)
 
-    return result
+    return {
+        "status": "success",
+        "data": result
+    }
