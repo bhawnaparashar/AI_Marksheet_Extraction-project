@@ -1,7 +1,7 @@
 import google.generativeai as genai
 import os, json
 
-genai.configure(api_key=os.getenv("AIzaSyAVsDQOAOD2SXzFGTnMV7djqPg_ZOvS40k"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 async def process_text_with_llm(text):
